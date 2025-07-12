@@ -21,13 +21,16 @@ let exchangeRates = {
   JPY: { devise: 'JPY', taux: 0.0206, lastUpdated: new Date() },
 };
 
-// Simuler un historique des taux (normalement stocké en base de données)
-let ratesHistory = [];
+// Historique des taux (stockage en mémoire)
+let ratesHistory = {};
+
+// Système d'alertes
+let alerts = [];
 
 // Fonction pour générer des données historiques simulées
 const generateHistoricalData = (baseCurrency, targetCurrency, days = 30) => {
   const data = [];
-  const baseRate = exchangeRates[targetCurrency] / exchangeRates[baseCurrency];
+  const baseRate = exchangeRates[targetCurrency].taux / exchangeRates[baseCurrency].taux;
   
   for (let i = days; i >= 0; i--) {
     const date = new Date();
@@ -46,6 +49,13 @@ const generateHistoricalData = (baseCurrency, targetCurrency, days = 30) => {
   
   return data;
 };
+
+// Initialiser l'historique avec des données simulées pour chaque devise
+Object.keys(exchangeRates).forEach(devise => {
+  if (devise !== 'TND') {
+    ratesHistory[devise] = generateHistoricalData('TND', devise, 30);
+  }
+});
 
 // Fonction de conversion
 const convertCurrency = (amount, from, to) => {
@@ -179,30 +189,57 @@ app.get('/api/history/:from/:to', (req, res) => {
   }
 });
 
-// Endpoint pour les devises populaires/tendances
-app.get('/api/trending', (req, res) => {
+// GET /api/history/:currency - Obtenir l'historique d'une devise spécifique
+app.get('/api/history/:currency', (req, res) => {
   try {
-    const trending = [
-      { currency: 'USD', change: '+1.2%', volume: 'Eleve' },
-      { currency: 'EUR', change: '-0.8%', volume: 'Tres eleve' },
-      { currency: 'GBP', change: '+0.5%', volume: 'Moyen' },
-      { currency: 'JPY', change: '+2.1%', volume: 'Eleve' },
-      { currency: 'TND', change: '-0.3%', volume: 'Stable' },
-      { currency: 'MAD', change: '+0.1%', volume: 'Faible' }
-    ];
+    const { currency } = req.params;
+    const upperCurrency = currency.toUpperCase();
+    
+    if (!exchangeRates[upperCurrency]) {
+      return res.status(404).json({
+        success: false,
+        error: 'Devise non supportée'
+      });
+    }
+    
+    if (!ratesHistory[upperCurrency]) {
+      return res.status(404).json({
+        success: false,
+        error: 'Aucun historique disponible pour cette devise'
+      });
+    }
     
     res.json({
       success: true,
       data: {
-        trending,
-        lastUpdate: new Date().toISOString(),
-        marketStatus: 'Ouvert'
-      }
+        currency: upperCurrency,
+        history: ratesHistory[upperCurrency],
+        currentRate: exchangeRates[upperCurrency].taux,
+        totalEntries: ratesHistory[upperCurrency].length
+      },
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      error: 'Erreur lors de la récupération des tendances'
+      error: 'Erreur lors de la récupération de l\'historique'
+    });
+  }
+});
+
+// GET /api/alerts - Obtenir toutes les alertes
+app.get('/api/alerts', (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: alerts,
+      count: alerts.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Erreur lors de la récupération des alertes'
     });
   }
 });
