@@ -1,0 +1,31 @@
+{
+  "name": "currencypro-fullstack",
+  "version": "1.0.0",
+  "description": "Professional Currency Converter - Full Stack Application",
+  "scripts": {
+    "install:all": "npm install && cd server && npm install",
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "cd server && npm run dev",
+    "client:dev": "npm start",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "npm run build",
+    "build:server": "cd server && npm run build",
+    "start": "concurrently \"npm run server:start\" \"serve -s build\"",
+    "server:start": "cd server && npm start",
+    "test": "npm test && cd server && npm test"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "serve": "^14.2.1"
+  },
+  "keywords": [
+    "currency",
+    "converter",
+    "fullstack",
+    "react",
+    "nodejs",
+    "typescript"
+  ],
+  "author": "Azer Khadhraoui",
+  "license": "MIT"
+}
