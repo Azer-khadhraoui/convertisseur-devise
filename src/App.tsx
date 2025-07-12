@@ -15,25 +15,65 @@ interface ConversionHistory {
 }
 
 const tauxChange: Record<Devise, number> = {
-  TND: 1,     // Base
-  EUR: 3.475,  // 1 EUR = 3.475 TND
-  USD: 0.33,  // 1 TND = 0.33 USD
-  GBP: 0.27,  // 1 TND = 0.27 GBP
-  MAD: 3.35,  // 1 TND = 3.35 MAD
-  CAD: 0.46,  // 1 TND = 0.46 CAD (dollar canadien)
-  CHF: 0.30,  // 1 TND = 0.30 CHF (franc suisse)
-  JPY: 48.5,  // 1 TND = 48.5 JPY (yen japonais)
+  TND: 1,       // Base
+  EUR: 3.475,   // 1 EUR = 3.475 TND
+  USD: 2.98,    
+  GBP: 3.70,    // 1 GBP = 3.70 TND (corrigé)
+  MAD: 0.298,   // 1 MAD = 0.298 TND (corrigé)
+  CAD: 2.17,    // 1 CAD = 2.17 TND (corrigé)
+  CHF: 3.33,    // 1 CHF = 3.33 TND (corrigé)
+  JPY: 0.0206,  // 1 JPY = 0.0206 TND (corrigé)
 };
 
-const deviseInfo: Record<Devise, { symbol: string; name: string; flag: string }> = {
-  TND: { symbol: 'TND', name: 'Dinar Tunisien', flag: '🇹🇳' },
-  EUR: { symbol: '€', name: 'Euro', flag: '🇪🇺' },
-  USD: { symbol: '$', name: 'Dollar US', flag: '🇺🇸' },
-  GBP: { symbol: '£', name: 'Livre Sterling', flag: '🇬🇧' },
-  MAD: { symbol: 'MAD', name: 'Dirham Marocain', flag: '🇲🇦' },
-  CAD: { symbol: 'C$', name: 'Dollar Canadien', flag: '🇨🇦' },
-  CHF: { symbol: 'CHF', name: 'Franc Suisse', flag: '🇨🇭' },
-  JPY: { symbol: '¥', name: 'Yen Japonais', flag: '🇯🇵' },
+const deviseInfo: Record<Devise, { symbol: string; name: string; flag: string; color: string }> = {
+  TND: { symbol: 'TND', name: 'Dinar Tunisien', flag: '🇹🇳', color: '#007A3D' },
+  EUR: { symbol: '€', name: 'Euro', flag: '🇪🇺', color: '#003399' },
+  USD: { symbol: '$', name: 'Dollar US', flag: '🇺🇸', color: '#B22234' },
+  GBP: { symbol: '£', name: 'Livre Sterling', flag: '🇬🇧', color: '#012169' },
+  MAD: { symbol: 'MAD', name: 'Dirham Marocain', flag: '🇲🇦', color: '#C1272D' },
+  CAD: { symbol: 'C$', name: 'Dollar Canadien', flag: '🇨🇦', color: '#FF0000' },
+  CHF: { symbol: 'CHF', name: 'Franc Suisse', flag: '🇨🇭', color: '#DC143C' },
+  JPY: { symbol: '¥', name: 'Yen Japonais', flag: '🇯🇵', color: '#BC002D' },
+};
+
+// Fonction pour créer un drapeau visuel avec fallback garanti
+const getFlagDisplay = (devise: Devise): React.ReactElement => {
+  const info = deviseInfo[devise];
+  
+  return (
+    <span className="inline-flex items-center justify-center relative">
+      {/* Tentative d'affichage emoji d'abord */}
+      <span 
+        className="emoji-flag absolute inset-0 flex items-center justify-center"
+        style={{ 
+          fontFamily: "'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif",
+          fontSize: 'inherit'
+        }}
+        title={info.name}
+      >
+        {info.flag}
+      </span>
+      {/* Fallback toujours visible avec un indicateur coloré */}
+      <span 
+        className="w-8 h-6 rounded-sm border border-white/30 flex items-center justify-center text-xs font-bold text-white shadow-lg"
+        style={{ 
+          backgroundColor: info.color,
+          minWidth: '32px',
+          minHeight: '24px'
+        }}
+        title={info.name}
+      >
+        {devise === 'EUR' ? 'EU' : devise.substring(0, 2)}
+      </span>
+    </span>
+  );
+};
+
+// Version string avec fallback pour les options
+const getFlagString = (devise: Devise): string => {
+  const info = deviseInfo[devise];
+  // Essayer l'emoji d'abord, puis fallback vers code pays
+  return `${info.flag} ` || `[${devise === 'EUR' ? 'EU' : devise.substring(0, 2)}] `;
 };
 
 function App() {
@@ -91,17 +131,24 @@ function App() {
     setHistory(prev => [newConversion, ...prev.slice(0, 49)]); // Garder max 50 entrées
   };
 
-  // Fonction de conversion bidirectionnelle
+  // Fonction de conversion bidirectionnelle - CORRIGÉE DÉFINITIVEMENT
   const convertCurrency = (amount: number, from: Devise, to: Devise): number => {
     if (from === to) return amount;
     
-    // Convertir d'abord vers TND (devise de base)
-    const amountInTND = from === 'TND' ? amount : amount / tauxChange[from];
+    // Si on convertit depuis TND vers une autre devise
+    if (from === 'TND') {
+      return amount / tauxChange[to]; // 100 TND / 3.03 = 33.00 USD
+    }
     
-    // Puis convertir vers la devise cible
-    const result = to === 'TND' ? amountInTND : amountInTND * tauxChange[to];
+    // Si on convertit vers TND depuis une autre devise
+    if (to === 'TND') {
+      return amount * tauxChange[from]; // 100 USD * 3.03 = 303 TND
+    }
     
-    return result;
+    // Conversion entre deux devises non-TND
+    // D'abord convertir vers TND, puis vers la devise cible
+    const amountInTND = amount * tauxChange[from];
+    return amountInTND / tauxChange[to];
   };
   
   const conversion = convertCurrency(montant, deviseFrom, deviseTo);
@@ -146,25 +193,6 @@ function App() {
       }
       setAnimatedValue(currentValue);
     }, duration / steps);
-  };
-  
-  // Fonction pour échanger les devises avec animation - CORRIGÉE
-  const swapCurrencies = () => {
-    playSound(700, 80); // Son d'échange
-    setIsAnimating(true);
-    
-    // Échanger les devises immédiatement
-    const tempFrom = deviseFrom;
-    setDeviseFrom(deviseTo);
-    setDeviseTo(tempFrom);
-    
-    setTimeout(() => {
-      setIsAnimating(false);
-      // Déclencher une nouvelle conversion si il y a un montant
-      if (montant > 0) {
-        triggerAnimation();
-      }
-    }, 300);
   };
   
   // Fonction pour créer un effet sonore (optionnel)
@@ -220,18 +248,19 @@ function App() {
 
   const mostUsedCurrency = Object.entries(stats.mostUsedFrom).sort(([,a], [,b]) => b - a)[0]?.[0] || 'TND';
 
-  // Déclencher l'animation quand le montant change
+  // Déclencher l'animation quand le montant change - SIMPLIFIÉ
   const handleMontantChange = (value: number) => {
     setMontant(value);
     if (value > 0) {
       playSound(600, 50); // Son de saisie
-      triggerAnimation();
-    } else {
-      setShowResult(false);
+      // Ajouter directement à l'historique
+      const result = convertCurrency(value, deviseFrom, deviseTo);
+      const rate = convertCurrency(1, deviseFrom, deviseTo);
+      addToHistory(value, deviseFrom, deviseTo, result, rate);
     }
   };
   
-  // Déclencher l'animation quand les devises changent
+  // Déclencher l'animation quand les devises changent - SIMPLIFIÉ
   const handleDeviseChange = (devise: Devise, type: 'from' | 'to') => {
     if (type === 'from') {
       setDeviseFrom(devise);
@@ -241,7 +270,12 @@ function App() {
     
     if (montant > 0) {
       playSound(700, 80); // Son de changement
-      triggerAnimation();
+      // Ajouter directement à l'historique avec la nouvelle devise
+      const newFrom = type === 'from' ? devise : deviseFrom;
+      const newTo = type === 'to' ? devise : deviseTo;
+      const result = convertCurrency(montant, newFrom, newTo);
+      const rate = convertCurrency(1, newFrom, newTo);
+      addToHistory(montant, newFrom, newTo, result, rate);
     }
   };
 
@@ -282,7 +316,7 @@ function App() {
               <div className="text-sm text-white/70 font-medium">Conversions Totales</div>
             </div>
             <div className="text-center bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-              <div className="text-3xl mb-2">{deviseInfo[mostUsedCurrency as Devise]?.flag}</div>
+              <div className="text-3xl mb-2">{getFlagDisplay(mostUsedCurrency as Devise)}</div>
               <div className="text-sm text-white/70 font-medium">Devise Préférée</div>
             </div>
             <div className="text-center bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
@@ -319,9 +353,9 @@ function App() {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="flex items-center gap-2 text-xl">
-                            <span>{deviseInfo[item.deviseFrom].flag}</span>
+                            <span>{getFlagDisplay(item.deviseFrom)}</span>
                             <span className="text-white/40">→</span>
-                            <span>{deviseInfo[item.deviseTo].flag}</span>
+                            <span>{getFlagDisplay(item.deviseTo)}</span>
                           </div>
                           <div className="text-white/60 text-sm font-medium">
                             {new Date(item.timestamp).toLocaleDateString('fr-FR', {
@@ -461,8 +495,8 @@ function App() {
                         }}
                         className="group bg-gradient-to-r from-yellow-400/20 to-orange-400/20 hover:from-yellow-400/30 hover:to-orange-400/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 border border-yellow-400/20 hover:border-yellow-400/40 shadow-md hover:shadow-lg"
                       >
-                        <span className="group-hover:scale-110 transition-transform inline-block">
-                          {deviseInfo[from].flag}→{deviseInfo[to].flag}
+                        <span className="group-hover:scale-110 transition-transform inline-block emoji-flag">
+                          {getFlagString(from)}→{getFlagString(to)}
                         </span>
                       </button>
                     );
@@ -511,7 +545,7 @@ function App() {
                   >
                     {Object.entries(deviseInfo).map(([code, info]) => (
                       <option key={code} value={code} className="bg-slate-800 text-white">
-                        {info.flag} {info.name} ({code})
+                        {getFlagString(code as Devise)} {info.name} ({code})
                       </option>
                     ))}
                   </select>
@@ -521,18 +555,6 @@ function App() {
                     </svg>
                   </div>
                 </div>
-              </div>
-
-              {/* Bouton d'échange stylé */}
-              <div className="flex justify-center">
-                <button
-                  onClick={swapCurrencies}
-                  className="group bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-4 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-110 active:scale-95 border border-white/20"
-                >
-                  <svg className={`w-6 h-6 transition-transform duration-300 ${isAnimating ? 'rotate-180' : 'group-hover:rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                </button>
               </div>
 
               {/* Devise cible */}
@@ -549,7 +571,7 @@ function App() {
                   >
                     {Object.entries(deviseInfo).map(([code, info]) => (
                       <option key={code} value={code} className="bg-slate-800 text-white">
-                        {info.flag} {info.name} ({code})
+                        {getFlagString(code as Devise)} {info.name} ({code})
                       </option>
                     ))}
                   </select>
@@ -577,7 +599,7 @@ function App() {
             )}
 
             {/* Informations sur le taux actuel - RÉSULTAT PRINCIPAL */}
-            {montant > 0 && !isAnimating && (
+            {montant > 0 && (
               <div className="mt-6 p-6 bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl border border-green-400/30 shadow-xl">
                 <div className="text-center">
                   <div className="text-sm text-white/70 font-medium mb-3">💰 Résultat de la conversion</div>
