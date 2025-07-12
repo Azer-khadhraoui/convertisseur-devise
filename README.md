@@ -143,12 +143,6 @@ Ce projet est à des fins d'apprentissage, mais les suggestions et amélioration
 
 Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
-## 👨‍💻 Auteur
-
-**[Votre Nom]**
-- 📧 Email: [votre.email@example.com]
-- 💼 LinkedIn: [Votre profil LinkedIn]
-- 🐱 GitHub: [Votre profil GitHub]
 
 ---
 
