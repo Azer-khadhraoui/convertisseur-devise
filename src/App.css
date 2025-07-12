@@ -152,6 +152,19 @@
   background-clip: content-box;
 }
 
+/* Classes personnalisées pour le scrolling */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-purple-500\/50 {
+  scrollbar-color: rgba(139, 92, 246, 0.5) transparent;
+}
+
+.scrollbar-track-transparent {
+  scrollbar-track-color: transparent;
+}
+
 /* Styles pour les options de select */
 .currency-select option {
   background-color: #1e293b;

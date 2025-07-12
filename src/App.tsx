@@ -16,7 +16,7 @@ interface ConversionHistory {
 
 const tauxChange: Record<Devise, number> = {
   TND: 1,     // Base
-  EUR: 0.3475,  // 1 TND = 0.31 EUR
+  EUR: 3.475,  // 1 EUR = 3.475 TND
   USD: 0.33,  // 1 TND = 0.33 USD
   GBP: 0.27,  // 1 TND = 0.27 GBP
   MAD: 3.35,  // 1 TND = 3.35 MAD
@@ -104,32 +104,35 @@ function App() {
     return result;
   };
   
-  const conversion = convertCurrency(montant, deviseFrom, deviseTo).toFixed(2);
+  const conversion = convertCurrency(montant, deviseFrom, deviseTo);
   const currentRate = convertCurrency(1, deviseFrom, deviseTo);
   
-  // Fonction pour déclencher l'animation
+  // Fonction pour déclencher l'animation - CORRIGÉE
   const triggerAnimation = () => {
     if (montant > 0) {
       setIsAnimating(true);
       setShowResult(false);
       setAnimatedValue(0);
       
+      // Calculer le résultat final avant l'animation
+      const finalResult = convertCurrency(montant, deviseFrom, deviseTo);
+      
       // Animation de calcul
       setTimeout(() => {
         setShowResult(true);
-        // Animation du compteur
-        animateCounter();
+        // Animation du compteur avec la valeur finale correcte
+        animateCounter(finalResult);
         setIsAnimating(false);
         
-        // Ajouter à l'historique
-        addToHistory(montant, deviseFrom, deviseTo, parseFloat(conversion), currentRate);
+        // Ajouter à l'historique avec la valeur finale correcte
+        addToHistory(montant, deviseFrom, deviseTo, finalResult, convertCurrency(1, deviseFrom, deviseTo));
       }, 1500);
     }
   };
   
-  // Animation du compteur de nombres
-  const animateCounter = () => {
-    const targetValue = parseFloat(conversion);
+  // Animation du compteur de nombres - CORRIGÉE
+  const animateCounter = (finalValue: number) => {
+    const targetValue = finalValue;
     const duration = 1000; // 1 seconde
     const steps = 60; // 60 FPS
     const increment = targetValue / steps;
@@ -145,13 +148,19 @@ function App() {
     }, duration / steps);
   };
   
-  // Fonction pour échanger les devises avec animation
+  // Fonction pour échanger les devises avec animation - CORRIGÉE
   const swapCurrencies = () => {
+    playSound(700, 80); // Son d'échange
     setIsAnimating(true);
+    
+    // Échanger les devises immédiatement
+    const tempFrom = deviseFrom;
+    setDeviseFrom(deviseTo);
+    setDeviseTo(tempFrom);
+    
     setTimeout(() => {
-      setDeviseFrom(deviseTo);
-      setDeviseTo(deviseFrom);
       setIsAnimating(false);
+      // Déclencher une nouvelle conversion si il y a un montant
       if (montant > 0) {
         triggerAnimation();
       }
@@ -287,8 +296,8 @@ function App() {
           </div>
         </div>
 
-        {/* Liste d'historique premium */}
-        <div className="flex-1 overflow-y-auto p-8 bg-gradient-to-b from-transparent to-black/20">
+        {/* Liste d'historique premium avec scroll amélioré */}
+        <div className="flex-1 overflow-y-auto p-8 bg-gradient-to-b from-transparent to-black/20 max-h-96 scrollbar-thin scrollbar-thumb-purple-500/50 scrollbar-track-transparent">
           {history.length === 0 ? (
             <div className="text-center py-16 text-white/60">
               <div className="text-8xl mb-6 animate-pulse">📈</div>
@@ -296,8 +305,11 @@ function App() {
               <p className="text-lg">Commencez à convertir pour voir votre historique</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {history.slice(0, 20).map((item) => {
+            <div className="space-y-4 pr-2">
+              <div className="text-center mb-4">
+                <p className="text-white/60 text-sm">📜 Faites défiler pour voir plus d'entrées</p>
+              </div>
+              {history.map((item) => {
                 const pairKey = `${item.deviseFrom}-${item.deviseTo}`;
                 const isFavorite = favorites.has(pairKey);
                 
@@ -550,36 +562,7 @@ function App() {
               </div>
             </div>
             
-            {/* Section résultat avec animation premium */}
-            {showResult && (
-              <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl p-6 border border-green-400/20 shadow-xl animate-fadeIn">
-                <div className="text-center">
-                  <div className="text-sm text-white/70 font-medium mb-2">Résultat de la conversion</div>
-                  <div className="text-4xl font-black text-white mb-4 animate-countUp">
-                    {deviseInfo[deviseTo].symbol} {animatedValue.toFixed(2)}
-                  </div>
-                  <div className="text-sm text-white/60">
-                    Taux : 1 {deviseInfo[deviseFrom].symbol} = {currentRate.toFixed(4)} {deviseInfo[deviseTo].symbol}
-                  </div>
-                  
-                  {/* Bouton favoris avec style premium */}
-                  <button
-                    onClick={() => {
-                      const pairKey = `${deviseFrom}-${deviseTo}`;
-                      toggleFavorite(pairKey);
-                      playSound(800, 100);
-                    }}
-                    className={`mt-4 px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl ${
-                      favorites.has(`${deviseFrom}-${deviseTo}`)
-                        ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white hover:from-yellow-500 hover:to-orange-500'
-                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/30'
-                    }`}
-                  >
-                    {favorites.has(`${deviseFrom}-${deviseTo}`) ? '⭐ Retiré des favoris' : '⭐ Ajouter aux favoris'}
-                  </button>
-                </div>
-              </div>
-            )}
+
 
             {/* Animation de chargement */}
             {isAnimating && (
@@ -593,13 +576,35 @@ function App() {
               </div>
             )}
 
-            {/* Informations sur le taux actuel */}
+            {/* Informations sur le taux actuel - RÉSULTAT PRINCIPAL */}
             {montant > 0 && !isAnimating && (
-              <div className="mt-6 p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10">
-                <div className="text-center text-white/80 text-sm">
-                  <span className="font-semibold">{montant} {deviseInfo[deviseFrom].symbol}</span>
-                  <span className="mx-2">→</span>
-                  <span className="font-semibold">{conversion} {deviseInfo[deviseTo].symbol}</span>
+              <div className="mt-6 p-6 bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl border border-green-400/30 shadow-xl">
+                <div className="text-center">
+                  <div className="text-sm text-white/70 font-medium mb-3">💰 Résultat de la conversion</div>
+                  <div className="text-white text-lg mb-4">
+                    <span className="font-bold text-2xl">{montant} {deviseInfo[deviseFrom].symbol}</span>
+                    <span className="mx-4 text-white/60">=</span>
+                    <span className="font-bold text-2xl text-green-400">{conversion.toFixed(2)} {deviseInfo[deviseTo].symbol}</span>
+                  </div>
+                  <div className="text-sm text-white/60 mb-4">
+                    Taux : 1 {deviseInfo[deviseFrom].symbol} = {currentRate.toFixed(4)} {deviseInfo[deviseTo].symbol}
+                  </div>
+                  
+                  {/* Bouton favoris avec style premium */}
+                  <button
+                    onClick={() => {
+                      const pairKey = `${deviseFrom}-${deviseTo}`;
+                      toggleFavorite(pairKey);
+                      playSound(800, 100);
+                    }}
+                    className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl ${
+                      favorites.has(`${deviseFrom}-${deviseTo}`)
+                        ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white hover:from-yellow-500 hover:to-orange-500'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/30'
+                    }`}
+                  >
+                    {favorites.has(`${deviseFrom}-${deviseTo}`) ? '⭐ Retiré des favoris' : '⭐ Ajouter aux favoris'}
+                  </button>
                 </div>
               </div>
             )}
