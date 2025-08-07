@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/convertisseur-devise/static/css/main.dd649d75.css",
-    "main.js": "/convertisseur-devise/static/js/main.ee3cd26b.js",
+    "main.js": "/convertisseur-devise/static/js/main.f29b0003.js",
     "static/js/453.92d10927.chunk.js": "/convertisseur-devise/static/js/453.92d10927.chunk.js",
     "index.html": "/convertisseur-devise/index.html",
     "main.dd649d75.css.map": "/convertisseur-devise/static/css/main.dd649d75.css.map",
-    "main.ee3cd26b.js.map": "/convertisseur-devise/static/js/main.ee3cd26b.js.map",
+    "main.f29b0003.js.map": "/convertisseur-devise/static/js/main.f29b0003.js.map",
     "453.92d10927.chunk.js.map": "/convertisseur-devise/static/js/453.92d10927.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.dd649d75.css",
-    "static/js/main.ee3cd26b.js"
+    "static/js/main.f29b0003.js"
   ]
 }
