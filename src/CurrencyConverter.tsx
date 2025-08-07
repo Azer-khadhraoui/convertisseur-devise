@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { useCurrencyAPI } from './hooks/useCurrencyAPI';
+import { apiService } from './services/adaptiveApi';
 
 // Définition des types
 interface Currency {
