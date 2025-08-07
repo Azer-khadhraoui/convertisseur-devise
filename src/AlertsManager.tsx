@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiService } from './services/adaptiveApi';
 
 interface Alert {
   id: string;
@@ -20,8 +21,6 @@ const AlertsManager: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  const API_BASE = 'http://localhost:5000/api';
-
   const currencies = [
     'EUR/USD', 'GBP/USD', 'USD/JPY', 'EUR/GBP', 
     'TND/EUR', 'TND/USD', 'MAD/EUR', 'USD/CHF'
@@ -35,20 +34,12 @@ const AlertsManager: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/alerts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currency: newAlert.currency,
-          targetRate: parseFloat(newAlert.targetRate),
-          type: newAlert.type,
-          email: newAlert.email
-        }),
+      const result = await apiService.createAlert({
+        currency: newAlert.currency,
+        targetRate: parseFloat(newAlert.targetRate),
+        type: newAlert.type,
+        email: newAlert.email
       });
-
-      const result = await response.json();
 
       if (result.success) {
         setAlerts([...alerts, result.data]);
@@ -60,7 +51,7 @@ const AlertsManager: React.FC = () => {
         });
         alert('Alerte créée avec succès !');
       } else {
-        alert(result.error || 'Erreur lors de la création de l\'alerte');
+        alert(result.message || 'Erreur lors de la création de l\'alerte');
       }
     } catch (error) {
       alert('Erreur de connexion');
